@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 from google import genai
 from google.genai import types
@@ -11,7 +12,11 @@ st.set_page_config(
 st.title("⚖️ Consulta de Legislação Portuguesa")
 st.caption("Faz uma pergunta e obtém a resposta com referência ao artigo e código exatos.")
 
-api_key = st.secrets.get("GEMINI_API_KEY", None) or st.sidebar.text_input(
+try:
+    api_key = st.secrets.get("GEMINI_API_KEY", None)
+except Exception:
+    api_key = None
+api_key = api_key or os.environ.get("GEMINI_API_KEY") or st.sidebar.text_input(
     "🔑 Chave API Google (Gemini)",
     type="password",
     placeholder="AIza...",
