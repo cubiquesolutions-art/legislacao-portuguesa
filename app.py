@@ -191,7 +191,7 @@ if pergunta:
 
     with st.chat_message("assistant"):
         with st.spinner("A pesquisar na legislação portuguesa..."):
-            # Tentativa 1: gemini-1.5-flash-latest com grounding sempre ativo (1500 req/dia)
+            # Tentativa 1: gemini-2.5-flash com grounding sempre ativo
             try:
                 search_tool = genai.protos.Tool(
                     google_search_retrieval=genai.protos.GoogleSearchRetrieval(
@@ -201,7 +201,7 @@ if pergunta:
                     )
                 )
                 model = genai.GenerativeModel(
-                    "gemini-1.5-flash-latest",
+                    "gemini-2.5-flash",
                     system_instruction=SYSTEM_PROMPT
                 )
                 response = model.generate_content(pergunta, tools=[search_tool])
@@ -209,38 +209,19 @@ if pergunta:
                 st.markdown(resposta)
                 st.session_state.messages.append({"role": "assistant", "content": resposta})
 
-            except Exception:
-                # Tentativa 2: gemini-1.5-pro-latest com grounding
+            except Exception as e1:
+                # Fallback: gemini-2.5-flash sem grounding
                 try:
-                    search_tool = genai.protos.Tool(
-                        google_search_retrieval=genai.protos.GoogleSearchRetrieval(
-                            dynamic_retrieval_config=genai.protos.DynamicRetrievalConfig(
-                                dynamic_threshold=0
-                            )
-                        )
-                    )
                     model = genai.GenerativeModel(
-                        "gemini-1.5-pro-latest",
+                        "gemini-2.5-flash",
                         system_instruction=SYSTEM_PROMPT
                     )
-                    response = model.generate_content(pergunta, tools=[search_tool])
+                    response = model.generate_content(pergunta)
                     resposta = response.text
                     st.markdown(resposta)
                     st.session_state.messages.append({"role": "assistant", "content": resposta})
-
                 except Exception as e2:
-                    # Fallback final: gemini-2.5-flash-lite sem grounding
-                    try:
-                        model = genai.GenerativeModel(
-                            "gemini-2.5-flash-lite",
-                            system_instruction=SYSTEM_PROMPT
-                        )
-                        response = model.generate_content(pergunta)
-                        resposta = response.text
-                        st.markdown(resposta)
-                        st.session_state.messages.append({"role": "assistant", "content": resposta})
-                    except Exception as e3:
-                        st.error(f"Erro: {str(e3)}")
+                    st.error(f"Erro: {str(e2)}")
 
 if st.session_state.messages:
     if st.sidebar.button("🗑️ Limpar conversa"):
