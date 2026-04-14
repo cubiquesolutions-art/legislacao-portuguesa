@@ -191,7 +191,7 @@ if pergunta:
 
     with st.chat_message("assistant"):
         with st.spinner("A pesquisar na legislação portuguesa..."):
-            # Tentativa 1: gemini-2.5-flash com grounding sempre ativo
+            # Tentativa 1: gemini-1.5-flash com grounding sempre ativo (1500 req/dia free tier)
             try:
                 search_tool = genai.protos.Tool(
                     google_search_retrieval=genai.protos.GoogleSearchRetrieval(
@@ -201,7 +201,7 @@ if pergunta:
                     )
                 )
                 model = genai.GenerativeModel(
-                    "gemini-2.5-flash",
+                    "gemini-1.5-flash",
                     system_instruction=SYSTEM_PROMPT
                 )
                 response = model.generate_content(pergunta, tools=[search_tool])
@@ -210,7 +210,7 @@ if pergunta:
                 st.session_state.messages.append({"role": "assistant", "content": resposta})
 
             except Exception:
-                # Tentativa 2: gemini-2.5-flash-lite com grounding
+                # Tentativa 2: gemini-1.5-flash-8b com grounding
                 try:
                     search_tool = genai.protos.Tool(
                         google_search_retrieval=genai.protos.GoogleSearchRetrieval(
@@ -220,7 +220,7 @@ if pergunta:
                         )
                     )
                     model = genai.GenerativeModel(
-                        "gemini-2.5-flash-lite",
+                        "gemini-1.5-flash-8b",
                         system_instruction=SYSTEM_PROMPT
                     )
                     response = model.generate_content(pergunta, tools=[search_tool])
@@ -232,7 +232,7 @@ if pergunta:
                     # Fallback final: sem grounding
                     try:
                         model = genai.GenerativeModel(
-                            "gemini-2.5-flash-lite",
+                            "gemini-1.5-flash",
                             system_instruction=SYSTEM_PROMPT
                         )
                         response = model.generate_content(pergunta)
