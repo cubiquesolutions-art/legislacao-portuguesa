@@ -80,6 +80,30 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+if not st.session_state.authenticated:
+    st.markdown("""
+    <div style="max-width:340px;margin:4rem auto 0 auto;padding:2rem;background:#1a1d2e;border-radius:16px;border:1px solid #2d2f3e;">
+        <div style="text-align:center;margin-bottom:1.5rem;">
+            <div class="cubique-badge">Cubique</div>
+            <h2 style="color:#ffffff;font-size:1.3rem;margin:0.5rem 0 0 0;">Acesso restrito</h2>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    with st.form("login_form"):
+        utilizador = st.text_input("Utilizador")
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Entrar", use_container_width=True)
+        if submitted:
+            if utilizador == st.secrets.get("LOGIN_USER", "") and password == st.secrets.get("LOGIN_PASS", ""):
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("Utilizador ou password incorretos.")
+    st.stop()
+
 try:
     api_key = st.secrets.get("GEMINI_API_KEY", None)
 except Exception:
