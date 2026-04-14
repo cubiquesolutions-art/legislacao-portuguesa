@@ -311,20 +311,33 @@ Responde com base na tua base de conhecimento jurídico verificado e indica que 
 
 Questão: {pergunta}"""
 
-            try:
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=contexto,
-                    config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
+            import time
+            resposta = None
+            ultimo_erro = None
+            for tentativa in range(4):
+                try:
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=contexto,
+                        config=types.GenerateContentConfig(
+                            system_instruction=SYSTEM_PROMPT,
+                        )
                     )
-                )
-                resposta = response.text
+                    resposta = response.text
+                    break
+                except Exception as e:
+                    ultimo_erro = e
+                    if "503" in str(e) or "UNAVAILABLE" in str(e) or "429" in str(e):
+                        if tentativa < 3:
+                            time.sleep(4 * (tentativa + 1))
+                            continue
+                    break
+
+            if resposta:
                 st.markdown(resposta)
                 st.session_state.messages.append({"role": "assistant", "content": resposta})
-
-            except Exception as e:
-                st.error(f"Erro ao gerar resposta: {str(e)}")
+            else:
+                st.error(f"Erro ao gerar resposta: {str(ultimo_erro)}")
 
 if st.session_state.messages:
     if st.sidebar.button("🗑️ Limpar conversa"):
