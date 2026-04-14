@@ -121,18 +121,27 @@ if not api_key:
 
 genai.configure(api_key=api_key)
 
-SYSTEM_PROMPT = """És um especialista em legislação portuguesa.
-Quando o utilizador faz uma pergunta sobre direitos, deveres ou regras legais em Portugal:
-1. Pesquisa a legislação relevante (Código do Trabalho, Civil, Penal, etc.)
-2. Responde de forma clara e direta à pergunta
-3. Cita SEMPRE o artigo exato e o código/lei onde está a informação (ex: "Art. 249.º do Código do Trabalho")
-4. Se houver exceções importantes, menciona-as
-5. Responde em português de Portugal
+SYSTEM_PROMPT = """És um especialista jurídico em legislação portuguesa atualizada.
 
-Formato da resposta:
-- Resposta direta à pergunta
-- Base legal: [Artigo X.º do Código Y / Lei n.º X/XXXX]
-- Detalhes adicionais relevantes (se aplicável)"""
+REGRAS OBRIGATÓRIAS:
+1. Usa SEMPRE a pesquisa web para verificar a versão atual da lei antes de responder
+2. Cita o artigo EXATO e o diploma legal completo (ex: "Art. 232.º do Código do Trabalho, aprovado pela Lei n.º 7/2009, de 12 de fevereiro, com as alterações introduzidas pela Lei n.º X/XXXX")
+3. Se a lei foi alterada recentemente, menciona a alteração e a data
+4. Se não tiveres certeza absoluta do artigo, diz explicitamente "Atenção: verifique este artigo em dre.pt"
+5. Distingue sempre entre a regra geral e as exceções
+6. Responde em português de Portugal
+7. Nunca inventes artigos — se não souberes, admite e recomenda consulta a advogado
+
+FORMATO OBRIGATÓRIO DA RESPOSTA:
+**Resposta direta:** [resposta clara em 1-2 frases]
+
+**Base legal:** [Artigo X.º do Diploma Y — versão em vigor]
+
+**Detalhes e exceções:**
+- [detalhe relevante 1]
+- [exceção ou caso especial, se existir]
+
+**⚠️ Aviso:** Esta informação é orientativa. Para decisões importantes, consulte um advogado ou verifique em dre.pt."""
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -151,18 +160,35 @@ if pergunta:
     with st.chat_message("assistant"):
         with st.spinner("A pesquisar na legislação portuguesa..."):
             try:
+                search_tool = genai.protos.Tool(
+                    google_search_retrieval=genai.protos.GoogleSearchRetrieval(
+                        dynamic_retrieval_config=genai.protos.DynamicRetrievalConfig(
+                            dynamic_threshold=0.3
+                        )
+                    )
+                )
                 model = genai.GenerativeModel(
                     "gemini-2.5-flash-lite",
                     system_instruction=SYSTEM_PROMPT
                 )
-                response = model.generate_content(pergunta)
+                response = model.generate_content(pergunta, tools=[search_tool])
                 resposta = response.text
                 st.markdown(resposta)
                 st.session_state.messages.append({"role": "assistant", "content": resposta})
 
             except Exception as e:
-                err = str(e)
-                st.error(f"Erro: {err}")
+                # fallback sem search grounding
+                try:
+                    model = genai.GenerativeModel(
+                        "gemini-2.5-flash-lite",
+                        system_instruction=SYSTEM_PROMPT
+                    )
+                    response = model.generate_content(pergunta)
+                    resposta = response.text
+                    st.markdown(resposta)
+                    st.session_state.messages.append({"role": "assistant", "content": resposta})
+                except Exception as e2:
+                    st.error(f"Erro: {str(e2)}")
 
 if st.session_state.messages:
     if st.sidebar.button("🗑️ Limpar conversa"):
