@@ -191,7 +191,7 @@ if pergunta:
 
     with st.chat_message("assistant"):
         with st.spinner("A pesquisar na legislação portuguesa..."):
-            # Tentativa 1: gemini-1.5-flash com grounding sempre ativo (1500 req/dia free tier)
+            # Tentativa 1: gemini-1.5-flash-latest com grounding sempre ativo (1500 req/dia)
             try:
                 search_tool = genai.protos.Tool(
                     google_search_retrieval=genai.protos.GoogleSearchRetrieval(
@@ -201,7 +201,7 @@ if pergunta:
                     )
                 )
                 model = genai.GenerativeModel(
-                    "gemini-1.5-flash",
+                    "gemini-1.5-flash-latest",
                     system_instruction=SYSTEM_PROMPT
                 )
                 response = model.generate_content(pergunta, tools=[search_tool])
@@ -210,7 +210,7 @@ if pergunta:
                 st.session_state.messages.append({"role": "assistant", "content": resposta})
 
             except Exception:
-                # Tentativa 2: gemini-1.5-flash-8b com grounding
+                # Tentativa 2: gemini-1.5-pro-latest com grounding
                 try:
                     search_tool = genai.protos.Tool(
                         google_search_retrieval=genai.protos.GoogleSearchRetrieval(
@@ -220,7 +220,7 @@ if pergunta:
                         )
                     )
                     model = genai.GenerativeModel(
-                        "gemini-1.5-flash-8b",
+                        "gemini-1.5-pro-latest",
                         system_instruction=SYSTEM_PROMPT
                     )
                     response = model.generate_content(pergunta, tools=[search_tool])
@@ -229,10 +229,10 @@ if pergunta:
                     st.session_state.messages.append({"role": "assistant", "content": resposta})
 
                 except Exception as e2:
-                    # Fallback final: sem grounding
+                    # Fallback final: gemini-2.5-flash-lite sem grounding
                     try:
                         model = genai.GenerativeModel(
-                            "gemini-1.5-flash",
+                            "gemini-2.5-flash-lite",
                             system_instruction=SYSTEM_PROMPT
                         )
                         response = model.generate_content(pergunta)
