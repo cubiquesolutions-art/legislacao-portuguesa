@@ -1,7 +1,6 @@
 import os
 import streamlit as st
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 
 st.set_page_config(
     page_title="Consulta de Legislação Portuguesa",
@@ -27,7 +26,7 @@ if not api_key:
     st.info("👈 Insere a tua chave API do Google na barra lateral para começar.")
     st.stop()
 
-client = genai.Client(api_key=api_key)
+genai.configure(api_key=api_key)
 
 SYSTEM_PROMPT = """És um especialista em legislação portuguesa.
 Quando o utilizador faz uma pergunta sobre direitos, deveres ou regras legais em Portugal:
@@ -59,25 +58,18 @@ if pergunta:
     with st.chat_message("assistant"):
         with st.spinner("A pesquisar na legislação portuguesa..."):
             try:
-                response = client.models.generate_content(
-                    model="gemini-2.0-flash",
-                    contents=pergunta,
-                    config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                    )
+                model = genai.GenerativeModel(
+                    "gemini-2.0-flash-lite",
+                    system_instruction=SYSTEM_PROMPT
                 )
+                response = model.generate_content(pergunta)
                 resposta = response.text
                 st.markdown(resposta)
                 st.session_state.messages.append({"role": "assistant", "content": resposta})
 
             except Exception as e:
                 err = str(e)
-                if "429" in err or "RESOURCE_EXHAUSTED" in err:
-                    st.error("Limite de pedidos atingido. Aguarda um minuto e tenta novamente.")
-                elif "API_KEY" in err or "401" in err:
-                    st.error("Chave API inválida. Verifica a tua chave.")
-                else:
-                    st.error(f"Erro: {err}")
+                st.error(f"Erro completo: {err}")
 
 if st.session_state.messages:
     if st.sidebar.button("🗑️ Limpar conversa"):
