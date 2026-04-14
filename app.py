@@ -1,6 +1,7 @@
 import os
 import streamlit as st
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 st.set_page_config(
     page_title="Cubique Apoio de Leis",
@@ -119,7 +120,7 @@ if not api_key:
     st.info("👈 Insere a tua chave API do Google na barra lateral para começar.")
     st.stop()
 
-genai.configure(api_key=api_key)
+client = genai.Client(api_key=api_key)
 
 SYSTEM_PROMPT = """És um especialista jurídico em legislação portuguesa atualizada.
 
@@ -191,20 +192,16 @@ if pergunta:
 
     with st.chat_message("assistant"):
         with st.spinner("A pesquisar na legislação portuguesa..."):
-            # Tentativa 1: gemini-2.5-flash com grounding sempre ativo
+            # Tentativa 1: gemini-2.5-flash com Google Search grounding (novo SDK)
             try:
-                search_tool = genai.protos.Tool(
-                    google_search_retrieval=genai.protos.GoogleSearchRetrieval(
-                        dynamic_retrieval_config=genai.protos.DynamicRetrievalConfig(
-                            dynamic_threshold=0  # 0 = grounding sempre ativo
-                        )
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=pergunta,
+                    config=types.GenerateContentConfig(
+                        system_instruction=SYSTEM_PROMPT,
+                        tools=[types.Tool(google_search=types.GoogleSearch())],
                     )
                 )
-                model = genai.GenerativeModel(
-                    "gemini-2.5-flash",
-                    system_instruction=SYSTEM_PROMPT
-                )
-                response = model.generate_content(pergunta, tools=[search_tool])
                 resposta = response.text
                 st.markdown(resposta)
                 st.session_state.messages.append({"role": "assistant", "content": resposta})
@@ -212,11 +209,13 @@ if pergunta:
             except Exception as e1:
                 # Fallback: gemini-2.5-flash sem grounding
                 try:
-                    model = genai.GenerativeModel(
-                        "gemini-2.5-flash",
-                        system_instruction=SYSTEM_PROMPT
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=pergunta,
+                        config=types.GenerateContentConfig(
+                            system_instruction=SYSTEM_PROMPT,
+                        )
                     )
-                    response = model.generate_content(pergunta)
                     resposta = response.text
                     st.markdown(resposta)
                     st.session_state.messages.append({"role": "assistant", "content": resposta})
