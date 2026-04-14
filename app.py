@@ -123,21 +123,48 @@ genai.configure(api_key=api_key)
 
 SYSTEM_PROMPT = """És um especialista jurídico em legislação portuguesa atualizada.
 
-FONTE OBRIGATÓRIA:
-- Pesquisa SEMPRE em site:diariodarepublica.pt antes de responder
-- A fonte primária é https://diariodarepublica.pt/dr/legislacao-por-codigo
-- Só usa outras fontes se não encontrares a informação no Diário da República
+=== BASE DE CONHECIMENTO JURÍDICO VERIFICADO ===
+Usa estes valores como referência base — verifica sempre via pesquisa se houve alterações posteriores:
 
-REGRAS OBRIGATÓRIAS:
-1. Usa a pesquisa web com "site:diariodarepublica.pt [tema]" para verificar a versão atual da lei
-2. Cita o artigo EXATO e o diploma legal completo (ex: "Art. 232.º do Código do Trabalho, aprovado pela Lei n.º 7/2009, de 12 de fevereiro, com as alterações introduzidas pela Lei n.º X/XXXX")
-3. Se a lei foi alterada recentemente, menciona a alteração e a data
-4. Se não tiveres certeza absoluta do artigo, diz explicitamente "Atenção: verifique este artigo em diariodarepublica.pt"
-5. Distingue sempre entre a regra geral e as exceções
-6. Responde em português de Portugal
-7. Nunca inventes artigos — se não souberes, admite e recomenda consulta a advogado
+DIREITO DO TRABALHO (Código do Trabalho — Lei n.º 7/2009, de 12 de fevereiro):
+- SMN 2025: €870/mês (Decreto-Lei n.º 108-A/2024, de 31 de dezembro de 2024)
+- SMN 2024: €820/mês
+- Art. 400.º CT — Aviso prévio por iniciativa do TRABALHADOR (cessação por iniciativa do trabalhador):
+  * Contrato a termo com duração ≤ 6 meses: 15 dias
+  * Contrato a termo com duração > 6 meses: 30 dias
+  * Contrato por tempo indeterminado com antiguidade < 2 anos: 30 dias
+  * Contrato por tempo indeterminado com antiguidade ≥ 2 anos: 60 dias
+- Art. 337.º CT — Prescrição de créditos laborais: 1 ano após a data de cessação do contrato de trabalho
+  (os créditos não prescrevem durante a vigência do contrato — Art. 337.º n.º 2 CT)
+- Art. 394.º CT — Justa causa de resolução pelo trabalhador
+- Indemnização por despedimento ilícito: Art. 391.º CT
 
-FORMATO OBRIGATÓRIO DA RESPOSTA:
+ARRENDAMENTO URBANO (NRAU — Lei n.º 6/2006, de 27 de fevereiro, com alterações):
+- Art. 1098.º CC — Denúncia pelo ARRENDATÁRIO de contrato a prazo certo:
+  * Prazo contratual < 3 meses: antecedência de 1/3 do prazo
+  * Prazo contratual entre 3 e 6 meses: 60 dias de antecedência
+  * Prazo contratual ≥ 6 meses (ou ≥ 1 ano): 120 dias de antecedência antes do termo ou renovação
+- Art. 1101.º CC — Denúncia pelo SENHORIO (não pelo arrendatário!)
+- Art. 1096.º CC — Renovação automática do contrato
+- Art. 1083.º CC — Resolução por incumprimento
+
+OUTROS:
+- IVA taxa normal: 23% (Portugal continental)
+- IVA taxa intermédia: 13% | IVA taxa reduzida: 6%
+- Prazo geral de prescrição civil: 20 anos (Art. 309.º CC)
+- Prazo especial de prescrição: 5 anos para obrigações periódicas (Art. 310.º CC)
+
+=== REGRAS OBRIGATÓRIAS ===
+1. PESQUISA SEMPRE antes de responder — usa "site:diariodarepublica.pt [tema]" para verificar a versão atual
+2. Os valores numéricos (prazos, montantes, percentagens) DEVEM ser confirmados pela pesquisa web
+3. Se a pesquisa contradizer a base de conhecimento acima, usa o resultado da pesquisa e indica a alteração
+4. Cita o artigo EXATO e o diploma legal completo
+5. Se não encontrares confirmação via pesquisa, usa a base de conhecimento e indica "verificar em diariodarepublica.pt"
+6. Nunca inventes artigos — se não souberes, diz explicitamente
+7. Distingue sempre entre a regra geral e as exceções
+8. Responde em português de Portugal
+
+=== FORMATO OBRIGATÓRIO ===
 **Resposta direta:** [resposta clara em 1-2 frases]
 
 **Base legal:** [Artigo X.º do Diploma Y — versão em vigor]
@@ -164,16 +191,17 @@ if pergunta:
 
     with st.chat_message("assistant"):
         with st.spinner("A pesquisar na legislação portuguesa..."):
+            # Tentativa 1: gemini-2.5-flash com grounding sempre ativo
             try:
                 search_tool = genai.protos.Tool(
                     google_search_retrieval=genai.protos.GoogleSearchRetrieval(
                         dynamic_retrieval_config=genai.protos.DynamicRetrievalConfig(
-                            dynamic_threshold=0.3
+                            dynamic_threshold=0  # 0 = grounding sempre ativo
                         )
                     )
                 )
                 model = genai.GenerativeModel(
-                    "gemini-2.5-flash-lite",
+                    "gemini-2.5-flash",
                     system_instruction=SYSTEM_PROMPT
                 )
                 response = model.generate_content(pergunta, tools=[search_tool])
@@ -181,19 +209,38 @@ if pergunta:
                 st.markdown(resposta)
                 st.session_state.messages.append({"role": "assistant", "content": resposta})
 
-            except Exception as e:
-                # fallback sem search grounding
+            except Exception:
+                # Tentativa 2: gemini-2.5-flash-lite com grounding
                 try:
+                    search_tool = genai.protos.Tool(
+                        google_search_retrieval=genai.protos.GoogleSearchRetrieval(
+                            dynamic_retrieval_config=genai.protos.DynamicRetrievalConfig(
+                                dynamic_threshold=0
+                            )
+                        )
+                    )
                     model = genai.GenerativeModel(
                         "gemini-2.5-flash-lite",
                         system_instruction=SYSTEM_PROMPT
                     )
-                    response = model.generate_content(pergunta)
+                    response = model.generate_content(pergunta, tools=[search_tool])
                     resposta = response.text
                     st.markdown(resposta)
                     st.session_state.messages.append({"role": "assistant", "content": resposta})
+
                 except Exception as e2:
-                    st.error(f"Erro: {str(e2)}")
+                    # Fallback final: sem grounding
+                    try:
+                        model = genai.GenerativeModel(
+                            "gemini-2.5-flash-lite",
+                            system_instruction=SYSTEM_PROMPT
+                        )
+                        response = model.generate_content(pergunta)
+                        resposta = response.text
+                        st.markdown(resposta)
+                        st.session_state.messages.append({"role": "assistant", "content": resposta})
+                    except Exception as e3:
+                        st.error(f"Erro: {str(e3)}")
 
 if st.session_state.messages:
     if st.sidebar.button("🗑️ Limpar conversa"):
