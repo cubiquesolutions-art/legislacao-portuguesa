@@ -148,9 +148,31 @@ DRE_CODIGOS = {
     "processo civil": f"{DRE_BASE}/dr/legislacao-por-codigo/codigo-processo-civil",
     "processo penal": f"{DRE_BASE}/dr/legislacao-por-codigo/codigo-processo-penal",
     "iva": f"{DRE_BASE}/dr/legislacao-por-codigo/codigo-iva",
+    "imposto valor acrescentado": f"{DRE_BASE}/dr/legislacao-por-codigo/codigo-iva",
     "irs": f"{DRE_BASE}/dr/legislacao-por-codigo/codigo-irs",
     "irc": f"{DRE_BASE}/dr/legislacao-por-codigo/codigo-irc",
     "arrendamento": f"{DRE_BASE}/dr/legislacao-por-codigo/nrau",
+}
+
+# Palavras-chave extra para forçar o fallback correcto
+DRE_KEYWORDS_EXTRA = {
+    "iva": "iva",
+    "taxa iva": "iva",
+    "imposto valor": "iva",
+    "valor acrescentado": "iva",
+    "irs": "irs",
+    "irc": "irc",
+    "arrendamento": "arrendamento",
+    "arrendatário": "arrendamento",
+    "senhorio": "arrendamento",
+    "renda": "arrendamento",
+    "salário mínimo": "trabalho",
+    "smn": "trabalho",
+    "aviso prévio": "trabalho",
+    "despedimento": "trabalho",
+    "contrato trabalho": "trabalho",
+    "prescrição civil": "civil",
+    "código civil": "civil",
 }
 
 
@@ -206,12 +228,25 @@ def buscar_dre(pergunta: str) -> str:
     # ── 2. Fallback: páginas de código relevantes ────────────────────────────
     if not blocos:
         pq = pergunta.lower()
-        for chave, url_codigo in DRE_CODIGOS.items():
-            if chave in pq or any(w in pq for w in chave.split()):
-                r3 = _get(url_codigo)
-                if r3:
-                    blocos.append(_extrair_texto(r3.text, url_codigo))
+
+        # Tentar primeiro pelas keywords extra (mais específicas)
+        url_alvo = None
+        for keyword, codigo_chave in DRE_KEYWORDS_EXTRA.items():
+            if keyword in pq:
+                url_alvo = DRE_CODIGOS.get(codigo_chave)
                 break
+
+        # Se não encontrou por keywords extra, tentar pelas chaves do dicionário
+        if not url_alvo:
+            for chave, url_codigo in DRE_CODIGOS.items():
+                if chave in pq or any(w in pq for w in chave.split()):
+                    url_alvo = url_codigo
+                    break
+
+        if url_alvo:
+            r3 = _get(url_alvo)
+            if r3:
+                blocos.append(_extrair_texto(r3.text, url_alvo))
 
         # Se ainda nada, tenta a página principal de legislação por código
         if not blocos:
@@ -256,12 +291,13 @@ OUTROS:
 - Prazo especial: 5 anos para obrigações periódicas (Art. 310.º CC)
 
 === REGRAS OBRIGATÓRIAS ===
-1. Responde EXCLUSIVAMENTE com base no conteúdo fornecido do diariodarepublica.pt
-2. Se o conteúdo do DRE confirmar ou actualizar a base de conhecimento, usa o DRE
-3. Cita o artigo EXATO e o diploma legal completo
-4. Nunca inventes artigos — se não souberes, diz explicitamente
-5. Distingue sempre entre a regra geral e as exceções
-6. Responde em português de Portugal
+1. PRIORIDADE: usa SEMPRE o conteúdo fornecido do diariodarepublica.pt quando disponível
+2. Se o conteúdo do DRE não cobrir a questão específica, usa a base de conhecimento verificada acima (que provém do diariodarepublica.pt)
+3. Nunca uses fontes que não sejam o DRE — a base de conhecimento foi extraída de lá
+4. Cita o artigo EXATO e o diploma legal completo
+5. Nunca inventes artigos — se não souberes, diz explicitamente
+6. Distingue sempre entre a regra geral e as exceções
+7. Responde em português de Portugal
 
 === FORMATO OBRIGATÓRIO ===
 **Resposta direta:** [resposta clara em 1-2 frases]
