@@ -14,8 +14,19 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Fundo e fonte geral */
-    .stApp { background-color: #0f1117; }
+    /* Fundo branco geral */
+    .stApp { background-color: #ffffff; }
+
+    /* Texto geral a preto */
+    .stApp, .stApp p, .stApp li, .stApp span, .stApp div {
+        color: #1a1a1a;
+    }
+
+    /* Sidebar branca */
+    [data-testid="stSidebar"] {
+        background-color: #f5f5f5;
+    }
+    [data-testid="stSidebar"] * { color: #1a1a1a !important; }
 
     /* Header */
     .header-container {
@@ -25,12 +36,12 @@ st.markdown("""
     .header-container h1 {
         font-size: 2.2rem;
         font-weight: 700;
-        color: #ffffff;
+        color: #1a1a1a;
         letter-spacing: -0.5px;
         margin-bottom: 0.3rem;
     }
     .header-container p {
-        color: #8b8fa8;
+        color: #555555;
         font-size: 0.95rem;
         margin: 0;
     }
@@ -47,28 +58,39 @@ st.markdown("""
         margin-bottom: 0.8rem;
     }
 
-    /* Mensagens */
+    /* Mensagens de chat */
     .stChatMessage { border-radius: 12px; }
+    [data-testid="stChatMessage"] p,
+    [data-testid="stChatMessage"] li,
+    [data-testid="stChatMessage"] span { color: #1a1a1a !important; }
 
-    /* Input */
+    /* Input do chat */
     .stChatInput textarea {
         border-radius: 12px !important;
-        border-color: #2d2f3e !important;
-        background-color: #1a1d2e !important;
-        color: #ffffff !important;
+        border-color: #cccccc !important;
+        background-color: #f9f9f9 !important;
+        color: #1a1a1a !important;
     }
+
+    /* Campos de formulário (login) */
+    input[type="text"], input[type="password"] {
+        background-color: #f9f9f9 !important;
+        color: #1a1a1a !important;
+        border-color: #cccccc !important;
+    }
+    label { color: #1a1a1a !important; }
 
     /* Botão sidebar */
     .stButton button {
         width: 100%;
         border-radius: 8px;
-        background-color: #1a1d2e;
-        color: #8b8fa8;
-        border: 1px solid #2d2f3e;
+        background-color: #f0f0f0;
+        color: #333333;
+        border: 1px solid #cccccc;
     }
     .stButton button:hover {
-        background-color: #2d2f3e;
-        color: #ffffff;
+        background-color: #e0e0e0;
+        color: #000000;
     }
 
     /* Esconder o menu do Streamlit */
@@ -89,10 +111,10 @@ if "authenticated" not in st.session_state:
 
 if not st.session_state.authenticated:
     st.markdown("""
-    <div style="max-width:340px;margin:4rem auto 0 auto;padding:2rem;background:#1a1d2e;border-radius:16px;border:1px solid #2d2f3e;">
+    <div style="max-width:340px;margin:4rem auto 0 auto;padding:2rem;background:#f5f5f5;border-radius:16px;border:1px solid #dddddd;">
         <div style="text-align:center;margin-bottom:1.5rem;">
             <div class="cubique-badge">Cubique</div>
-            <h2 style="color:#ffffff;font-size:1.3rem;margin:0.5rem 0 0 0;">Acesso restrito</h2>
+            <h2 style="color:#1a1a1a;font-size:1.3rem;margin:0.5rem 0 0 0;">Acesso restrito</h2>
         </div>
     </div>
     """, unsafe_allow_html=True)
