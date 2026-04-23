@@ -14,21 +14,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Fundo branco geral */
-    .stApp { background-color: #ffffff; }
-
-    /* Texto geral a preto */
-    .stApp, .stApp p, .stApp li, .stApp span, .stApp div {
-        color: #1a1a1a;
-    }
-
-    /* Sidebar branca */
-    [data-testid="stSidebar"] {
-        background-color: #f5f5f5;
-    }
-    [data-testid="stSidebar"] * { color: #1a1a1a !important; }
-
-    /* Header */
+    /* Header personalizado */
     .header-container {
         text-align: center;
         padding: 2rem 0 1rem 0;
@@ -58,40 +44,8 @@ st.markdown("""
         margin-bottom: 0.8rem;
     }
 
-    /* Mensagens de chat */
+    /* Raio de borda nas mensagens */
     .stChatMessage { border-radius: 12px; }
-    [data-testid="stChatMessage"] p,
-    [data-testid="stChatMessage"] li,
-    [data-testid="stChatMessage"] span { color: #1a1a1a !important; }
-
-    /* Input do chat */
-    .stChatInput textarea {
-        border-radius: 12px !important;
-        border-color: #cccccc !important;
-        background-color: #f9f9f9 !important;
-        color: #1a1a1a !important;
-    }
-
-    /* Campos de formulário (login) */
-    input[type="text"], input[type="password"] {
-        background-color: #f9f9f9 !important;
-        color: #1a1a1a !important;
-        border-color: #cccccc !important;
-    }
-    label { color: #1a1a1a !important; }
-
-    /* Botão sidebar */
-    .stButton button {
-        width: 100%;
-        border-radius: 8px;
-        background-color: #f0f0f0;
-        color: #333333;
-        border: 1px solid #cccccc;
-    }
-    .stButton button:hover {
-        background-color: #e0e0e0;
-        color: #000000;
-    }
 
     /* Esconder o menu do Streamlit */
     #MainMenu, footer { visibility: hidden; }
@@ -111,7 +65,7 @@ if "authenticated" not in st.session_state:
 
 if not st.session_state.authenticated:
     st.markdown("""
-    <div style="max-width:340px;margin:4rem auto 0 auto;padding:2rem;background:#f5f5f5;border-radius:16px;border:1px solid #dddddd;">
+    <div style="max-width:340px;margin:4rem auto 0 auto;padding:2rem;background:#f0f2f6;border-radius:16px;border:1px solid #d0d3e0;">
         <div style="text-align:center;margin-bottom:1.5rem;">
             <div class="cubique-badge">Cubique</div>
             <h2 style="color:#1a1a1a;font-size:1.3rem;margin:0.5rem 0 0 0;">Acesso restrito</h2>
